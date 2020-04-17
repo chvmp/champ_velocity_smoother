@@ -149,8 +149,11 @@ void VelocitySmoother::spin()
       input_active = false;
       if (IS_ZERO_VEOCITY(target_vel) == false)
       {
-        ROS_WARN_STREAM("Velocity Smoother : input got inactive leaving us a non-zero target velocity ("
-              << target_vel.linear.x << ", " << target_vel.linear.y << ", " << target_vel.angular.z << "), zeroing...[" << name << "]");
+        if ( !quiet ) 
+        {
+          ROS_WARN_STREAM("Velocity Smoother : input got inactive leaving us a non-zero target velocity ("
+                << target_vel.linear.x << ", " << target_vel.linear.y << ", " << target_vel.angular.z << "), zeroing...[" << name << "]");
+        }
         target_vel = ZERO_VEL_COMMAND;
       }
     }

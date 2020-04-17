@@ -16,7 +16,7 @@
         
     <!-- parameters -->
     <rosparam file="$(arg config_file)" command="load"/>
-
+    <param name="quiet" value="true" />
     <!-- velocity commands I/O -->
     <remap from="$(arg node_name)/raw_cmd_vel"    to="$(arg raw_cmd_vel_topic)"/>
     <remap from="$(arg node_name)/smooth_cmd_vel" to="$(arg smooth_cmd_vel_topic)"/>
