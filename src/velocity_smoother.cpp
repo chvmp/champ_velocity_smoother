@@ -18,15 +18,20 @@ namespace yocs_velocity_smoother
         pr_next_(0)
   {
     declare_parameter("speed_lim_v_x", 1.0);
+    declare_parameter("speed_lim_v_y", 1.0);
     declare_parameter("accel_lim_v", 0.5);
     declare_parameter("speed_lim_w", 5.0);
     declare_parameter("accel_lim_w", 2.5);
     declare_parameter("decel_factor", 1.0);
     declare_parameter("frequency", 20.0);
-    declare_parameter("robot_feedback_", (int)NONE);
+    declare_parameter("robot_feedback", (int)NONE);
 
     speed_lim_v_x_ = get_parameter("speed_lim_v_x").as_double();
-    speed_lim_v_y_ = speed_lim_v_x_ * 0.6;
+    speed_lim_v_y_ = get_parameter("speed_lim_v_y").as_double();
+    // Apply the original logic (ignore v_y arg) if default value is used
+    if (speed_lim_v_y_ == 1.0) {
+      speed_lim_v_y_ = speed_lim_v_x_ * 0.6;
+    }
     accel_lim_v_ = get_parameter("accel_lim_v").as_double();
     decel_factor_ = get_parameter("decel_factor").as_double();
     decel_lim_v_ = decel_factor_ * accel_lim_v_;
@@ -34,13 +39,30 @@ namespace yocs_velocity_smoother
     accel_lim_w_ = get_parameter("accel_lim_w").as_double();
     decel_lim_w_ = decel_factor_ * accel_lim_w_;
     frequency_ = get_parameter("frequency").as_double();
-    robot_feedback_ = static_cast<RobotFeedbackType>(get_parameter("robot_feedback_").as_int());
+    robot_feedback_ = static_cast<RobotFeedbackType>(get_parameter("robot_feedback").as_int());
 
-    smooth_vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::QoS(10));
+    RCLCPP_INFO_STREAM(
+      get_logger(),
+      "Speed limits: v_x=" << speed_lim_v_x_ << ", v_y=" << speed_lim_v_y_ << ", w=" << speed_lim_w_
+    );
+    RCLCPP_INFO_STREAM(
+      get_logger(),
+      "Accel limits: v=" << accel_lim_v_ << ", w=" << accel_lim_w_
+    );
+    RCLCPP_INFO_STREAM(
+      get_logger(),
+      "Decel limits: v=" << decel_lim_v_ << ", w=" << decel_lim_w_ << ", factor=" << decel_factor_
+    );
+    RCLCPP_INFO_STREAM(
+      get_logger(),
+      "Frequency: " << frequency_ << ". Feedback: " << robot_feedback_
+    );
+
+    smooth_vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("smooth_cmd_vel", rclcpp::QoS(10));
     raw_in_vel_sub_ = create_subscription<geometry_msgs::msg::Twist>(
         "raw_cmd_vel", rclcpp::QoS(10), std::bind(&VelocitySmoother::velocityCB, this, _1));
     current_vel_sub_ = create_subscription<geometry_msgs::msg::Twist>(
-        "current_velocity", rclcpp::QoS(10), std::bind(&VelocitySmoother::robotVelCB, this, _1));
+        "robot_cmd_vel", rclcpp::QoS(10), std::bind(&VelocitySmoother::robotVelCB, this, _1));
     odometry_sub_ = create_subscription<nav_msgs::msg::Odometry>(
         "odometry", rclcpp::QoS(10), std::bind(&VelocitySmoother::odometryCB, this, _1));
   }
@@ -108,7 +130,6 @@ namespace yocs_velocity_smoother
       locker.lock();
       double accel_lim_v_(accel_lim_v_);
       double accel_lim_w_(accel_lim_w_);
-      double decel_factor(decel_factor_);
       double decel_lim_v_(decel_lim_v_);
       double decel_lim_w_(decel_lim_w_);
       locker.unlock();
