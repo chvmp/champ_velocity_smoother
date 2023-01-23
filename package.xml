@@ -8,7 +8,7 @@
   <description>
      Bound incoming velocity messages according to robot velocity and acceleration limits.
   </description>
-  <author>Sergey Korol</author>
+  <author>Jorge Santos Simon</author>
   <maintainer email="serhii.s.korol@gmail.com">Sergey Korol</maintainer>
   <license>BSD</license>
   
