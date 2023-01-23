@@ -1,41 +1,49 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
+
 project(yocs_velocity_smoother)
-find_package(catkin REQUIRED COMPONENTS roscpp pluginlib nodelet ecl_threads dynamic_reconfigure geometry_msgs nav_msgs)
 
-# Dynamic reconfigure support
-generate_dynamic_reconfigure_options(cfg/params.cfg)
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
-catkin_package(
-   INCLUDE_DIRS include
-   LIBRARIES ${PROJECT_NAME}_nodelet
-   CATKIN_DEPENDS roscpp pluginlib nodelet ecl_threads dynamic_reconfigure geometry_msgs nav_msgs
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+
+include_directories(include)
+
+add_executable(velocity_smoother src/velocity_smoother.cpp)
+ament_target_dependencies(velocity_smoother
+  rclcpp
+  std_msgs
+  geometry_msgs
+  nav_msgs
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
-include_directories(include ${catkin_INCLUDE_DIRS})
-
-
-# Nodelet library
-add_library(${PROJECT_NAME}_nodelet src/velocity_smoother_nodelet.cpp)
-
-
-target_link_libraries(${PROJECT_NAME}_nodelet ${catkin_LIBRARIES})
-add_dependencies(${PROJECT_NAME}_nodelet ${PROJECT_NAME}_gencfg)
-
-
-install(TARGETS ${PROJECT_NAME}_nodelet
-        DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+install(TARGETS
+  velocity_smoother
+  DESTINATION lib/${PROJECT_NAME}
 )
+
 install(DIRECTORY include/${PROJECT_NAME}/
-        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  DESTINATION include/${PROJECT_NAME}
 )
-install(DIRECTORY plugins
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+
+install(DIRECTORY
+  config
+  DESTINATION share/${PROJECT_NAME}
 )
-install(DIRECTORY launch
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}
 )
-install(DIRECTORY param
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+
+ament_package()
